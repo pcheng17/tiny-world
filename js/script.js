@@ -6,65 +6,75 @@ const gameWidth = 1600;
 const gameHeight = 1000;
 const xOffset = gameWidth / 2;
 const yOffset = gameHeight / 4;
-let tileSize = 30;
+let tileSize = 50;
 let tSizeSqInv = 1.0 / (tileSize ** 2);
 let tiles = [];
-boardSize = 20;
+boardSize = 10;
 
 var gxp = null;
 var gyp = null;
 
 class Tile {
-    constructor(ix, iy) {
+    constructor(ix, iy, size) {
         this.ix = ix;
         this.iy = iy;
+        this.size = size;
         [this.x, this.y] = isometricToCartesian(ix, iy);
-        this.canvasBuffer = 10;
-        this.canvas = createGraphics(2 * tileSize + this.canvasBuffer, tileSize + this.canvasBuffer);
+        this.canvasBuffer = 5;
+        this.canvas = createGraphics(
+            2 * (this.size + this.canvasBuffer),
+            2 * this.size + 2 * this.canvasBuffer
+        );
     }
 
     sketch() {
-        this.canvas.push();
-        this.canvas.translate(this.canvasBuffer / 2, this.canvasBuffer / 2);
-        this.canvas.beginShape();
         this.canvas.clear();
+        this.canvas.push();
+        this.canvas.translate(this.canvasBuffer, this.canvasBuffer);
+        this.canvas.beginShape(QUADS);
         this.canvas.fill("#ffffff");
-        this.canvas.strokeWeight(1.5);
+        this.canvas.strokeWeight(1);
         this.canvas.stroke(20);
-        this.canvas.vertex(tileSize, 0);
-        this.canvas.vertex(2 * tileSize, tileSize / 2);
-        this.canvas.vertex(tileSize, tileSize);
-        this.canvas.vertex(0, tileSize / 2);
-        this.canvas.vertex(tileSize, 0);
-        // this.canvas.fill(0);
-        // this.canvas.text(this.ix + "," + this.iy, this.x - tileSize / 4, this.y + tileSize / 2 + fontSize / 2);
+        // Top face
+        this.canvas.vertex(this.size, 0);
+        this.canvas.vertex(2 * this.size, this.size / 2);
+        this.canvas.vertex(this.size, this.size);
+        this.canvas.vertex(0, this.size / 2);
+        // Left face
+        this.canvas.vertex(0, this.size / 2);
+        this.canvas.vertex(0, this.size * 0.70);
+        this.canvas.vertex(this.size, this.size * 1.20);
+        this.canvas.vertex(this.size, this.size);
+        // Right face
+        this.canvas.vertex(this.size, this.size);
+        this.canvas.vertex(this.size, this.size * 1.20);
+        this.canvas.vertex(2 * this.size, this.size * 0.70);
+        this.canvas.vertex(2 * this.size, this.size / 2);
         this.canvas.endShape();
         this.canvas.pop();
     }
 
     draw() {
         this.sketch();
-        image(this.canvas, this.x - tileSize + xOffset - this.canvasBuffer / 2, this.y + yOffset - this.canvasBuffer / 2);
+        image(this.canvas, this.x - this.size + xOffset - this.canvasBuffer, this.y + yOffset - this.canvasBuffer);
     }
 
     sketchBlack() {
-        this.canvas.push();
-        this.canvas.translate(this.canvasBuffer / 2, this.canvasBuffer / 2);
-        this.canvas.beginShape();
         this.canvas.clear();
-        this.canvas.fill("#000000");
-        this.canvas.strokeWeight(1.5);
+        this.canvas.push();
+        this.canvas.translate(this.canvasBuffer, this.canvasBuffer);
+        this.canvas.beginShape();
+        this.canvas.fill("#d9d9d9");
+        this.canvas.strokeWeight(1);
         this.canvas.stroke(20);
-        this.canvas.vertex(tileSize, 0);
-        this.canvas.vertex(2 * tileSize, tileSize / 2);
-        this.canvas.vertex(tileSize, tileSize);
-        this.canvas.vertex(0, tileSize / 2);
-        this.canvas.vertex(tileSize, 0);
-        // this.canvas.fill(0);
-        // this.canvas.text(this.ix + "," + this.iy, this.x - tileSize / 4, this.y + tileSize / 2 + fontSize / 2);
+        this.canvas.vertex(this.size, 0);
+        this.canvas.vertex(2 * this.size, this.size / 2);
+        this.canvas.vertex(this.size, this.size);
+        this.canvas.vertex(0, this.size / 2);
+        this.canvas.vertex(this.size, 0);
         this.canvas.endShape();
         this.canvas.pop();
-        image(this.canvas, this.x - tileSize + xOffset - this.canvasBuffer / 2, this.y + yOffset - this.canvasBuffer / 2);
+        image(this.canvas, this.x - this.size + xOffset - this.canvasBuffer, this.y + yOffset - this.canvasBuffer);
     }
 }
 
@@ -73,11 +83,9 @@ function setup() {
     background(bgColor);
 
     for (var i = 0; i < boardSize; i++) {
-        // let iOffset = boardSize * i;
         tiles[i] = [];
         for (var j = 0; j < boardSize; j++) {
-            // const idx = iOffset + j;
-            tiles[i][j] = new Tile(i, j);
+            tiles[i][j] = new Tile(i, j, tileSize);
             tiles[i][j].draw();
         }
     }
@@ -99,16 +107,30 @@ function draw() {
 
     if (0 <= gx && gx < boardSize && 0 <= gy && gy < boardSize) {
         if (gxp === null && gyp === null) {
+            console.log("Mouse over draw");
+            tiles[gx][gy].sketchBlack();
+        } else if (gxp !== gx || gyp !== gy) {
+            console.log("Mouse over draw, reset previous");
+            for (var i = gxp; i < boardSize; i++) {
+                for (var j = gyp; j < boardSize; j++) {
+                    tiles[i][j].draw();
+                }
+            }
+            // tiles[gxp][gyp].draw();
             tiles[gx][gy].sketchBlack();
         } else {
-            tiles[gxp][gyp].draw();
-            tiles[gx][gy].sketchBlack();
+            console.log("No updates");
         }
         gxp = gx;
         gyp = gy;
     } else {
         if (gxp !== null && gyp !== null && 0 <= gxp && gxp < boardSize && 0 <= gyp && gyp < boardSize) {
-            tiles[gxp][gyp].draw();
+            console.log("Reset previous");
+            for (var i = gxp; i < boardSize; i++) {
+                for (var j = gyp; j < boardSize; j++) {
+                    tiles[i][j].draw();
+                }
+            }
         }
         gxp = null;
         gyp = null;
