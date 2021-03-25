@@ -1,4 +1,4 @@
-// Tiny Traffic
+// Tiny World
 
 const bgColor = "#e8e5d5"
 let fontSize = 12;
