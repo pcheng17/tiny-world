@@ -75,17 +75,17 @@ class Grid {
         this.yOffset = yOffset;
         this.tiles = [];
 
-        for (var i = 0; i < this.xSize; i++) {
+        for (let i = 0; i < this.xSize; i++) {
             this.tiles[i] = [];
-            for (var j = 0; j < this.ySize; j++) {
+            for (let j = 0; j < this.ySize; j++) {
                 this.tiles[i][j] = new Tile(i, j, this.tileSize);
             }
         }
     }
 
     draw() {
-        for (var i = 0; i < this.xSize; i++) {
-            for (var j = 0; j < this.ySize; j++) {
+        for (let i = 0; i < this.xSize; i++) {
+            for (let j = 0; j < this.ySize; j++) {
                 this.tiles[i][j].draw();
             }
         }
@@ -122,7 +122,7 @@ class Tile {
         this.canvasBuffer = 5;
         this.canvas = createGraphics(
             2 * (this.size + this.canvasBuffer),
-            2 * this.size + 2 * this.canvasBuffer
+            2 * (this.size + this.canvasBuffer)
         );
     }
 
