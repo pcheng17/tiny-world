@@ -16,6 +16,9 @@ yBoardSize = 10;
 let ixp = null;
 let iyp = null;
 
+let ixst = null;
+let iyst = null;
+
 let grid;
 
 function setup() {
@@ -56,16 +59,27 @@ function draw() {
         ixp = null;
         iyp = null;
     }
+
+    // if (ixst !== null && iyst !== null) {
+    //     if (grid.isIsoPosInGrid(ixst, iyst)) {
+    //         grid.drawHoverTile(ixst, iyst);
+    //     }
+    // }
 }
+
+function mouseClicked() {
+    [ixst, iyst] = isometricCursorPos();
+}
+
 
 class Grid {
     /**
-     * constructor Initialize the data structure for thie  grid, but does not draw
-     * @param {Number} xSize Resolution of the grid in the x-direction
-     * @param {Number} ySize Resolution of the grid in the y-direction
-     * @param {Number} tileSize Size of each grid tile
-     * @param {Number} xOffset Offset in the x-direction for drawing the grid
-     * @param {Number} yOffset Offset in the y-direction for drawing the grid
+     * Initialize the data structure for thie  grid, but does not draw
+     * @param {Number} [xSize] Resolution of the grid in the x-direction
+     * @param {Number} [ySize] Resolution of the grid in the y-direction
+     * @param {Number} [tileSize] Size of each grid tile
+     * @param {Number} [xOffset] Offset in the x-direction for drawing the grid
+     * @param {Number} [yOffset] Offset in the y-direction for drawing the grid
      */
     constructor(xSize, ySize, tileSize, xOffset, yOffset) {
         this.xSize = xSize;
@@ -84,21 +98,28 @@ class Grid {
     }
 
     draw() {
+        push();
+        translate(this.xOffset, this.yOffset);
         for (let i = 0; i < this.xSize; i++) {
             for (let j = 0; j < this.ySize; j++) {
                 this.tiles[i][j].draw();
             }
         }
+        pop();
     }
 
     drawHoverTile(ix, iy) {
+        push();
+        translate(this.xOffset, this.yOffset);
         this.tiles[ix][iy].drawHover();
-
+        pop();
     }
 
     drawNoHoverTile(ix, iy) {
+        push();
+        translate(this.xOffset, this.yOffset);
         this.tiles[ix][iy].drawNoHover();
-
+        pop();
     }
 
     isIsoPosInGrid(ix, iy) {
@@ -109,112 +130,99 @@ class Grid {
 
 class Tile {
     /**
-     * constructor Initialize parameters of this tile
-     * @param {Number} ix Isometric x-coordinate of this tile
-     * @param {Number} iy Isometric y-coordinate of this tile
-     * @param {Number} size Size of this tile
+     * Initialize parameters of this tile
+     * @param {Number} [ix] Isometric x-coordinate of this tile
+     * @param {Number} [iy] Isometric y-coordinate of this tile
+     * @param {Number} [size] Size of this tile
      */
     constructor(ix, iy, size) {
         this.ix = ix;
         this.iy = iy;
         this.size = size;
         [this.x, this.y] = isometricToCartesian(ix, iy);
-        this.canvasBuffer = 5;
-        this.canvas = createGraphics(
-            2 * (this.size + this.canvasBuffer),
-            2 * (this.size + this.canvasBuffer)
-        );
+        this.verts = [
+            [this.x, this.y],
+            [this.x + this.size, this.y + this.size / 2],
+            [this.x, this.y + this.size],
+            [this.x - this.size, this.y + this.size / 2],
+            [this.x - this.size, this.y + 0.7 * this.size],
+            [this.x, this.y + 1.2 * this.size],
+            [this.x + this.size, this.y + 0.7 * this.size]
+        ];
     }
 
     /**
-     * draw Draw the default look of the tile, including the thickness of the tile
+     * Draw the default look of the tile, including the thickness of the tile
      */
     draw() {
-        this.canvas.clear();
-        this.canvas.push();
-        this.canvas.translate(this.canvasBuffer, this.canvasBuffer);
-        this.canvas.fill("#ffffff");
-        this.canvas.strokeWeight(1);
-        this.canvas.stroke(20);
-        this.canvas.beginShape(QUADS);
-        // Top face
-        this.canvas.vertex(this.size, 0);
-        this.canvas.vertex(2 * this.size, this.size / 2);
-        this.canvas.vertex(this.size, this.size);
-        this.canvas.vertex(0, this.size / 2);
-        // Left face
-        this.canvas.vertex(0, this.size / 2);
-        this.canvas.vertex(0, this.size * 0.70);
-        this.canvas.vertex(this.size, this.size * 1.20);
-        this.canvas.vertex(this.size, this.size);
-        // Right face
-        this.canvas.vertex(this.size, this.size);
-        this.canvas.vertex(this.size, this.size * 1.20);
-        this.canvas.vertex(2 * this.size, this.size * 0.70);
-        this.canvas.vertex(2 * this.size, this.size / 2);
-        this.canvas.endShape();
-        this.canvas.pop();
-        // Draw this canvas
-        image(this.canvas,
-            this.x - this.size + xOffset - this.canvasBuffer,
-            this.y + yOffset - this.canvasBuffer);
+        push();
+        fill("#ffffff");
+        strokeWeight(1);
+        stroke(20);
+        beginShape(QUADS);
+        this.topFace();
+        this.leftFace();
+        this.rightFace();
+        endShape();
+        pop();
     }
 
     /**
-     * drawNoHover Color the top of this tile the default color, used when the cursor is not
-     *             hovering over this tile
+     * Color the top of this tile the default color, used when the cursor is
+     * not hovering over this tile
      */
     drawNoHover() {
-        this.canvas.clear();
-        this.canvas.push();
-        this.canvas.translate(this.canvasBuffer, this.canvasBuffer);
-        this.canvas.fill("#ffffff");
-        this.canvas.strokeWeight(1);
-        this.canvas.stroke(20);
-        this.canvas.beginShape(QUADS);
-        // Top face - only updating the color
-        this.canvas.vertex(this.size, 0);
-        this.canvas.vertex(2 * this.size, this.size / 2);
-        this.canvas.vertex(this.size, this.size);
-        this.canvas.vertex(0, this.size / 2);
-        this.canvas.endShape();
-        this.canvas.pop();
-        // Draw this canvas
-        image(this.canvas,
-            this.x - this.size + xOffset - this.canvasBuffer,
-            this.y + yOffset - this.canvasBuffer);
+        push();
+        fill("#ffffff");
+        strokeWeight(1);
+        stroke(20);
+        beginShape(QUADS);
+        this.topFace();
+        endShape();
+        pop();
     }
 
     /**
-     * drawHover Color the top of this tile a different color, used when the cursor is
-     *           hovering over this tile
+     * Color the top of this tile a different color, used when the cursor is
+     * hovering over this tile
      */
     drawHover() {
-        this.canvas.clear();
-        this.canvas.push();
-        this.canvas.translate(this.canvasBuffer, this.canvasBuffer);
-        this.canvas.fill("#d9d9d9");
-        this.canvas.strokeWeight(1);
-        this.canvas.stroke(20);
-        this.canvas.beginShape(QUADS);
-        // Top face - only updating the color
-        this.canvas.vertex(this.size, 0);
-        this.canvas.vertex(2 * this.size, this.size / 2);
-        this.canvas.vertex(this.size, this.size);
-        this.canvas.vertex(0, this.size / 2);
-        this.canvas.endShape();
-        this.canvas.pop();
-        // Draw this canvas
-        image(this.canvas,
-            this.x - this.size + xOffset - this.canvasBuffer,
-            this.y + yOffset - this.canvasBuffer);
+        push();
+        fill("#d9d9d9");
+        strokeWeight(1);
+        stroke(20);
+        beginShape(QUADS);
+        this.topFace();
+        endShape();
+        pop();
+    }
+
+    topFace() {
+        vertex(this.verts[0][0], this.verts[0][1]);
+        vertex(this.verts[1][0], this.verts[1][1]);
+        vertex(this.verts[2][0], this.verts[2][1]);
+        vertex(this.verts[3][0], this.verts[3][1]);
+    }
+
+    leftFace() {
+        vertex(this.verts[3][0], this.verts[3][1]);
+        vertex(this.verts[4][0], this.verts[4][1]);
+        vertex(this.verts[5][0], this.verts[5][1]);
+        vertex(this.verts[2][0], this.verts[2][1]);
+    }
+
+    rightFace() {
+        vertex(this.verts[2][0], this.verts[2][1]);
+        vertex(this.verts[5][0], this.verts[5][1]);
+        vertex(this.verts[6][0], this.verts[6][1]);
+        vertex(this.verts[1][0], this.verts[1][1]);
     }
 }
 
 /**
- * cartesianToIsometric Convert Cartesian coordinates to isometric coordinates
- * @param {Number} x Cartesian x-coordinate
- * @param {Number} y Cartesian y-coordinate
+ * Convert Cartesian coordinates to isometric coordinates
+ * @param {Number} [x] Cartesian x-coordinate
+ * @param {Number} [y] Cartesian y-coordinate
  * @returns Isometric coordinates
  */
 function cartesianToIsometric(x, y) {
@@ -227,9 +235,9 @@ function cartesianToIsometric(x, y) {
 }
 
 /**
- * isometricToCartesian Convert isometric coordinates to Cartesian coordinates
- * @param {Number} ix Isometric x-coordinate
- * @param {Number} iy Isometric y-coordinate
+ * Convert isometric coordinates to Cartesian coordinates
+ * @param {Number} [ix] Isometric x-coordinate
+ * @param {Number} [iy] Isometric y-coordinate
  * @returns Cartesian coordinates
  */
 function isometricToCartesian(ix, iy) {
@@ -239,7 +247,7 @@ function isometricToCartesian(ix, iy) {
 }
 
 /**
- * isometricCursorPos Get the isometric coordinates of the current cursor position
+ * Get the isometric coordinates of the current cursor position
  * @returns Isometric coordinates of the cursor position
  */
 function isometricCursorPos() {
