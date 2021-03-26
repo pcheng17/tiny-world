@@ -1,6 +1,9 @@
 // Tiny World
 
-const bgColor = "#e8e5d5"
+const bgColor = "#e8e5d5";
+const grassColor = "#63e12a";
+const dirtColor = "#9e5422";
+const waterColor = "#00b1ff";
 let fontSize = 12;
 const gameWidth = 1600;
 const gameHeight = 1000;
@@ -43,22 +46,22 @@ function draw() {
     text("y = ".concat(iy), 5, 15 + fontSize);
     pop();
 
-    if (grid.isIsoPosInGrid(ix, iy)) {
-        if (ixp === null && iyp === null) {
-            grid.drawHoverTile(ix, iy);
-        } else if (ixp !== ix || iyp !== iy) {
-            grid.drawNoHoverTile(ixp, iyp);
-            grid.drawHoverTile(ix, iy);
-        }
-        ixp = ix;
-        iyp = iy;
-    } else {
-        if (ixp !== null && iyp !== null && grid.isIsoPosInGrid(ixp, iyp)) {
-            grid.drawNoHoverTile(ixp, iyp);
-        }
-        ixp = null;
-        iyp = null;
-    }
+    // if (grid.isIsoPosInGrid(ix, iy)) {
+    //     if (ixp === null && iyp === null) {
+    //         grid.drawHoverTile(ix, iy);
+    //     } else if (ixp !== ix || iyp !== iy) {
+    //         grid.drawNoHoverTile(ixp, iyp);
+    //         grid.drawHoverTile(ix, iy);
+    //     }
+    //     ixp = ix;
+    //     iyp = iy;
+    // } else {
+    //     if (ixp !== null && iyp !== null && grid.isIsoPosInGrid(ixp, iyp)) {
+    //         grid.drawNoHoverTile(ixp, iyp);
+    //     }
+    //     ixp = null;
+    //     iyp = null;
+    // }
 
     // if (ixst !== null && iyst !== null) {
     //     if (grid.isIsoPosInGrid(ixst, iyst)) {
@@ -92,7 +95,12 @@ class Grid {
         for (let i = 0; i < this.xSize; i++) {
             this.tiles[i] = [];
             for (let j = 0; j < this.ySize; j++) {
-                this.tiles[i][j] = new Tile(i, j, this.tileSize);
+                if (random() > 0.5) {
+                    this.tiles[i][j] = new GrassTile(i, j, this.tileSize);
+                } else {
+                    this.tiles[i][j] = new WaterTile(i, j, this.tileSize);
+                }
+
             }
         }
     }
@@ -140,14 +148,16 @@ class Tile {
         this.iy = iy;
         this.size = size;
         [this.x, this.y] = isometricToCartesian(ix, iy);
+        this.topColor = "#ffffff";
+        this.sideColor = "#ffffff";
         this.verts = [
             [this.x, this.y],
             [this.x + this.size, this.y + this.size / 2],
             [this.x, this.y + this.size],
             [this.x - this.size, this.y + this.size / 2],
-            [this.x - this.size, this.y + 0.7 * this.size],
-            [this.x, this.y + 1.2 * this.size],
-            [this.x + this.size, this.y + 0.7 * this.size]
+            [this.x - this.size, this.y + 1.5 * this.size],
+            [this.x, this.y + 2 * this.size],
+            [this.x + this.size, this.y + 1.5 * this.size]
         ];
     }
 
@@ -156,12 +166,14 @@ class Tile {
      */
     draw() {
         push();
-        fill("#ffffff");
         strokeWeight(1);
         stroke(20);
         beginShape(QUADS);
+        fill(this.topColor);
         this.topFace();
+        fill(this.sideColor);
         this.leftFace();
+        fill(this.sideColor);
         this.rightFace();
         endShape();
         pop();
@@ -173,10 +185,10 @@ class Tile {
      */
     drawNoHover() {
         push();
-        fill("#ffffff");
         strokeWeight(1);
         stroke(20);
         beginShape(QUADS);
+        fill(this.topColor);
         this.topFace();
         endShape();
         pop();
@@ -188,10 +200,10 @@ class Tile {
      */
     drawHover() {
         push();
-        fill("#d9d9d9");
         strokeWeight(1);
         stroke(20);
         beginShape(QUADS);
+        fill(this.topColor);
         this.topFace();
         endShape();
         pop();
@@ -216,6 +228,74 @@ class Tile {
         vertex(this.verts[5][0], this.verts[5][1]);
         vertex(this.verts[6][0], this.verts[6][1]);
         vertex(this.verts[1][0], this.verts[1][1]);
+    }
+}
+
+class GrassTile extends Tile {
+    constructor(ix, iy, size) {
+        super(ix, iy, size);
+        this.name = "Grass";
+        this.topColor = "#63e12a";
+        this.sideColor = "#428434";
+        this.dirtColor = "#9e5422";
+    }
+
+    leftFace() {
+        push();
+        vertex(this.verts[3][0], this.verts[3][1]);
+        vertex(this.verts[4][0], this.verts[4][1] - 0.8 * this.size);
+        vertex(this.verts[5][0], this.verts[5][1] - 0.8 * this.size);
+        vertex(this.verts[2][0], this.verts[2][1]);
+        fill(this.dirtColor);
+        vertex(this.verts[4][0], this.verts[4][1] - 0.8 * this.size);
+        vertex(this.verts[4][0], this.verts[4][1]);
+        vertex(this.verts[5][0], this.verts[5][1]);
+        vertex(this.verts[5][0], this.verts[5][1] - 0.8 * this.size);
+        pop();
+    }
+
+    rightFace() {
+        push();
+        vertex(this.verts[2][0], this.verts[2][1]);
+        vertex(this.verts[5][0], this.verts[5][1] - 0.8 * this.size);
+        vertex(this.verts[6][0], this.verts[6][1] - 0.8 * this.size);
+        vertex(this.verts[1][0], this.verts[1][1]);
+        fill(this.dirtColor);
+        vertex(this.verts[5][0], this.verts[5][1] - 0.8 * this.size);
+        vertex(this.verts[5][0], this.verts[5][1]);
+        vertex(this.verts[6][0], this.verts[6][1]);
+        vertex(this.verts[6][0], this.verts[6][1] - 0.8 * this.size);
+        pop();
+    }
+}
+
+class WaterTile extends Tile {
+    constructor(ix, iy, size) {
+        super(ix, iy, size);
+        this.name = "Water";
+        this.topColor = "#00b1ff";
+        this.sideColor = "#007cad";
+    }
+
+    topFace() {
+        vertex(this.verts[0][0], this.verts[0][1] + 7);
+        vertex(this.verts[1][0], this.verts[1][1] + 7);
+        vertex(this.verts[2][0], this.verts[2][1] + 7);
+        vertex(this.verts[3][0], this.verts[3][1] + 7);
+    }
+
+    leftFace() {
+        vertex(this.verts[3][0], this.verts[3][1] + 7);
+        vertex(this.verts[4][0], this.verts[4][1]);
+        vertex(this.verts[5][0], this.verts[5][1]);
+        vertex(this.verts[2][0], this.verts[2][1] + 7);
+    }
+
+    rightFace() {
+        vertex(this.verts[2][0], this.verts[2][1] + 7);
+        vertex(this.verts[5][0], this.verts[5][1]);
+        vertex(this.verts[6][0], this.verts[6][1]);
+        vertex(this.verts[1][0], this.verts[1][1] + 7);
     }
 }
 
